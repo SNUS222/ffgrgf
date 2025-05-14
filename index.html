@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест по Религиоведению</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind bg-gray-100 */
+        }
+        .option-button {
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .option-button:hover {
+            background-color: #d1d5db; /* Tailwind bg-gray-300 */
+        }
+        .option-button.selected {
+            background-color: #3b82f6; /* Tailwind bg-blue-500 */
+            color: white;
+        }
+        .option-button.correct {
+            background-color: #22c55e; /* Tailwind bg-green-500 */
+            color: white;
+        }
+        .option-button.incorrect {
+            background-color: #ef4444; /* Tailwind bg-red-500 */
+            color: white;
+        }
+        /* Custom scrollbar for better aesthetics if content overflows */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Ensure full height for centering */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        .main-container {
+            min-height: 100vh; /* Ensure it takes at least full viewport height */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div id="quiz-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl main-container flex flex-col">
+
+        <div id="start-screen" class="text-center flex flex-col justify-center items-center h-full">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 mb-6">Тест по Религиоведению</h1>
+            <p id="quiz-description" class="text-slate-600 mb-8 text-lg">Проверьте свои знания. В тесте 20 случайно выбранных вопросов.</p>
+            <button id="start-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105">
+                Начать тест
+            </button>
+        </div>
+
+        <div id="question-screen" class="hidden flex-grow flex flex-col">
+            <div id="progress-container" class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <div id="stats" class="text-sm text-slate-500 mb-2 flex justify-between">
+                <span id="question-counter"></span>
+                <span id="score">Счет: 0</span>
+            </div>
+            <h2 id="question-number-header" class="text-lg font-semibold text-indigo-700 mb-2"></h2>
+            <p id="question-text" class="text-xl text-slate-800 mb-6 min-h-[60px] flex items-center"></p>
+            <div id="options-container" class="space-y-3 mb-6">
+                </div>
+            <div id="feedback-text" class="min-h-[30px] text-md font-medium mb-6"></div>
+            <button id="next-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg mt-auto transition-opacity duration-300 opacity-50 cursor-not-allowed" disabled>
+                Следующий вопрос
+            </button>
+        </div>
+
+        <div id="end-screen" class="hidden text-center flex-grow flex flex-col justify-center items-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 mb-6">Тест Завершен!</h1>
+            <p id="final-score" class="text-slate-700 text-2xl mb-8"></p>
+            <button id="restart-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105">
+                Пройти еще раз
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Question Data (Master List) ---
+        // This array holds all the questions, options, and correct answers.
+        const allQuestionsData = [
+            { id: 1, questionText: "Религиозное сознание имеет два уровня", options: [ { key: "a", label: "а)", text: "теоретический и практический;" }, { key: "b", label: "б)", text: "обыденный и концептуальный;" }, { key: "c", label: "в)", text: "бессознательный и сознательный;" }, { key: "d", label: "г)", text: "теологический и рациональный;" } ], correctAnswerKey: "b" },
+            { id: 2, questionText: "Согласно католическому вероучению,  души грешников, не получившие прощения в земной жизни, но не отягощенные смертными грехами пребывают в", options: [ { key: "a", label: "а)", text: "чистилище;" }, { key: "b", label: "б)", text: "царствии небесном;" }, { key: "c", label: "в)", text: "аду;" }, { key: "d", label: "г)", text: "анафоре;" } ], correctAnswerKey: "a" },
+            { id: 3, questionText: "Священное животное, считавшееся прародителем того или иного племени, обозначается термином", options: [ { key: "a", label: "а)", text: "культ;" }, { key: "b", label: "б)", text: "табу;" }, { key: "c", label: "в)", text: "тотем;" }, { key: "d", label: "г)", text: "фетиш;" } ], correctAnswerKey: "c" },
+            { id: 4, questionText: "К неохристианским объединениям не относится", options: [ { key: "a", label: "а)", text: "«Церковь Унификации»;" }, { key: "b", label: "б)", text: "«Дети Бога»;" }, { key: "c", label: "в)", text: "«Церковь Тела Христова»;" }, { key: "d", label: "г)", text: "«Общество Сознания Кришны»;" } ], correctAnswerKey: "d" },
+            { id: 5, questionText: "Под свободой совести понимается", options: [ { key: "a", label: "а)", text: "государственная атеистическая политика;" }, { key: "b", label: "б)", text: "право граждан исповедовать любую религию или не исповедовать никакой;" }, { key: "c", label: "в)", text: "отделение церкви от государства;" }, { key: "d", label: "г)", text: "запрет устанавливать привилегии на основании вероисповедания;" } ], correctAnswerKey: "b" },
+            { id: 6, questionText: "Совокупность представлений и обрядов, в основе которых лежит вера в возможность влияния на людей и явления с помощью определенных символических действий, называется", options: [ { key: "a", label: "а)", text: "магия;" }, { key: "b", label: "б)", text: "тотемизм;" }, { key: "c", label: "в)", text: "анимизм;" }, { key: "d", label: "г)", text: "фетишизм;" } ], correctAnswerKey: "a" },
+            { id: 7, questionText: "Разрыв между западной и восточной ветвями христианской церкви произошёл", options: [ { key: "a", label: "а)", text: "в 652 г." }, { key: "b", label: "б)", text: "в 1054 г." }, { key: "c", label: "в)", text: "в 325 г" }, { key: "d", label: "г)", text: "в 431 г" } ], correctAnswerKey: "b" },
+            { id: 8, questionText: "Чертами языческого сознания следует считать", options: [ { key: "a", label: "а)", text: "подчинение законам разумного Космоса;" }, { key: "b", label: "б)", text: "все перечисленные черты;" }, { key: "c", label: "в)", text: "отсутствие свободы воли;" }, { key: "d", label: "г)", text: "отсутствие ценности человеческой жизни" } ], correctAnswerKey: "b" },
+            { id: 9, questionText: "Культ неодушевлённых предметов, наделяемых сверхъестественными свойствами, называется", options: [ { key: "a", label: "а)", text: "анимизм;" }, { key: "b", label: "б)", text: "фетишизм;" }, { key: "c", label: "в)", text: "табу;" }, { key: "d", label: "г)", text: "тотемизм;" } ], correctAnswerKey: "b" },
+            { id: 10, questionText: "Функция религии, с помощью которой через ценности, традиции, обычаи осуществляется управление сознанием и поведением, называется", options: [ { key: "a", label: "а)", text: "легитимирующая;" }, { key: "b", label: "б)", text: "нормативная;" }, { key: "c", label: "в)", text: "регулятивная;" }, { key: "d", label: "г)", text: "компенсаторная;" } ], correctAnswerKey: "c" },
+            { id: 11, questionText: "Ламаизм – это", options: [ { key: "a", label: "а)", text: "монотеистическая религия Тибета;" }, { key: "b", label: "б)", text: "вера в особую силу неодушевленных предметов;" }, { key: "c", label: "в)", text: "одно из направлений буддизма;" }, { key: "d", label: "г)", text: "политеистическая религия Древней Индии;" } ], correctAnswerKey: "c" },
+            { id: 12, questionText: "Конституция Узбекистана", options: [ { key: "a", label: "а)", text: "гарантирует свободу совести и вероисповедания;" }, { key: "b", label: "б)", text: "ввела некоторые ограничения деятельности религиозных объединений;" }, { key: "c", label: "в)", text: "провозгласила принцип уважения христианства, ислама, буддизма и иудаизма;" }, { key: "d", label: "г)", text: "признала особую роль ислама в истории Узбекистана и его особое положение в обществе;" } ], correctAnswerKey: "a" },
+            { id: 13, questionText: "Двумя высшими сословиями в индийском обществе считались", options: [ { key: "a", label: "а)", text: "шудры и кшатрии;" }, { key: "b", label: "б)", text: "брахманы и кшатрии;" }, { key: "c", label: "в)", text: "брахманы и парии;" }, { key: "d", label: "г)", text: "вайшья и шудры;" } ], correctAnswerKey: "b" },
+            { id: 14, questionText: "Свод норм мусульманского права называется", options: [ { key: "a", label: "а)", text: "закят;" }, { key: "b", label: "б)", text: "шариат;" }, { key: "c", label: "в)", text: "хадис;" }, { key: "d", label: "г)", text: "сунна;" } ], correctAnswerKey: "b" },
+            { id: 15, questionText: "Протестантизм возник в", options: [ { key: "a", label: "а)", text: "XIX в." }, { key: "b", label: "б)", text: "X в." }, { key: "c", label: "в)", text: "XIII в." }, { key: "d", label: "г)", text: "XVI в" } ], correctAnswerKey: "d" },
+            { id: 16, questionText: "Цель практики канонов в дзэн-буддизме –", options: [ { key: "a", label: "а)", text: "пробудить в ученике смирение;" }, { key: "b", label: "б)", text: "развить воображение ученика;" }, { key: "c", label: "в)", text: "вывести ученика из привычной логики, подтолкнуть к новому восприятию реальности;" }, { key: "d", label: "г)", text: "дисциплинировать тело и дух ученика;" } ], correctAnswerKey: "c" },
+            { id: 17, questionText: "Община мусульман носит название", options: [ { key: "a", label: "а)", text: "умма;" }, { key: "b", label: "б)", text: "хадис;" }, { key: "c", label: "в)", text: "хадж;" }, { key: "d", label: "г)", text: "сунна;" } ], correctAnswerKey: "a" },
+            { id: 18, questionText: "Основы учения даосизма изложены в книге", options: [ { key: "a", label: "а)", text: "«Упанишады»" }, { key: "b", label: "б)", text: "«Канон о пути и добродетели»" }, { key: "c", label: "в)", text: "«Нихонги»" }, { key: "d", label: "г)", text: "«Беседы и изречения»" } ], correctAnswerKey: "b" },
+            { id: 19, questionText: "В XVIII в. в Аравии возникло религиозно-политическое движение ваххабизм, которое", options: [ { key: "a", label: "а)", text: "оформилось как негативная реакция на появление шиизма" }, { key: "b", label: "б)", text: "призывало вернуться к чистоте раннего ислама, отказу от заимствованных новшеств" }, { key: "c", label: "в)", text: "утверждало, что духовная власть должна передаваться наследникам имама Исмаила" }, { key: "d", label: "г)", text: "признавало необходимость изменений в исламском учении об образе жизни" } ], correctAnswerKey: "b" },
+            { id: 20, questionText: "В конфуцианстве совершенный человек, мудрый и абсолютно добродетельный называется", options: [ { key: "a", label: "а)", text: "цзюнь-цзы" }, { key: "b", label: "б)", text: "у-вэй" }, { key: "c", label: "в)", text: "сяо-жэнь" }, { key: "d", label: "г)", text: "пань-го" } ], correctAnswerKey: "a" },
+            { id: 21, questionText: "Легендарные правители, мифические герои, восьмерка великих мудрецов, видные представители конфуцианства составляют пантеон", options: [ { key: "a", label: "а)", text: "даосизма" }, { key: "b", label: "б)", text: "вишнуизма" }, { key: "c", label: "в)", text: "парсизма" }, { key: "d", label: "г)", text: "суфизма" } ], correctAnswerKey: "d" }, // According to file marking
+            { id: 22, questionText: "Лао-Цзы – это", options: [ { key: "a", label: "а)", text: "основатель даосизма;" }, { key: "b", label: "б)", text: "основатель синтоизма;" }, { key: "c", label: "в)", text: "основатель парсизма;" }, { key: "d", label: "г)", text: "учитель конфуцианства;" } ], correctAnswerKey: "a" },
+            { id: 23, questionText: "Как называются в Исламе самые достоверные хадисы?", options: [ { key: "a", label: "а)", text: "сунан;" }, { key: "b", label: "б)", text: "саҳиҳ;" }, { key: "c", label: "в)", text: "xасан;" }, { key: "d", label: "г)", text: "ижмо;" } ], correctAnswerKey: "b" },
+            { id: 24, questionText: "Какой источник считается священным после Корана в исламе ?", options: [ { key: "a", label: "а)", text: "ҳадисы;" }, { key: "b", label: "б)", text: "книга сира;" }, { key: "c", label: "в)", text: "книга Ривоятов;" }, { key: "d", label: "г)", text: "“Муснад”;" } ], correctAnswerKey: "a" },
+            { id: 25, questionText: "К заповедям Моисея не относится следующая заповедь", options: [ { key: "a", label: "а)", text: "Не укради;" }, { key: "b", label: "б)", text: "Да не будет у тебя других богов перед ликом моим;" }, { key: "c", label: "в)", text: "Не прелюбодействуй;" }, { key: "d", label: "г)", text: "Прощай врагов своих;" } ], correctAnswerKey: "d" },
+            { id: 26, questionText: "Суть теории прамонотеизма состоит в том, что", options: [ { key: "a", label: "а)", text: "возникновение религии можно объяснить психологическими и социальными причинами;" }, { key: "b", label: "б)", text: "во всех существующих многообразных верованиях можно обнаружить остатки древнейшей веры в единого Бога-творца;" }, { key: "c", label: "в)", text: "религия возникает в результате страха первобытного человека перед силами природы;" }, { key: "d", label: "г)", text: "в истории человечества существовал «дорелигиозный период»" } ], correctAnswerKey: "b" },
+            { id: 27, questionText: "После смерти пророка Мухаммеда общину мусульман возглавили его преемники", options: [ { key: "a", label: "а)", text: "муххаддисы" }, { key: "b", label: "б)", text: "халифы" }, { key: "c", label: "в)", text: "ансары" }, { key: "d", label: "г)", text: "имамы" } ], correctAnswerKey: "b" },
+            { id: 28, questionText: "Бесконечная цепь перерождений в индуизме – это", options: [ { key: "a", label: "а)", text: "хинаяна" }, { key: "b", label: "б)", text: "сансара" }, { key: "c", label: "в)", text: "дхарма" }, { key: "d", label: "г)", text: "нирвана" } ], correctAnswerKey: "b" },
+            { id: 29, questionText: "Сообщение о жизни пророка Мухаммеда, предание о его словах или действиях в исламе называют", options: [ { key: "a", label: "а)", text: "хадис" }, { key: "b", label: "б)", text: "инсад" }, { key: "c", label: "в)", text: "ихсан" }, { key: "d", label: "г)", text: "тарик" } ], correctAnswerKey: "a" },
+            { id: 30, questionText: "Основные мазхабы в суннизме это-", options: [ { key: "a", label: "а)", text: "ҳанафия, моликия, шафия, xанбалия" }, { key: "b", label: "б)", text: "ҳанафия, ваххабизм, шофия, xариджизм" }, { key: "c", label: "в)", text: "шафия, маликия, имамия, xанбалия" }, { key: "d", label: "г)", text: "ҳанафия, шафия, ҳалложия, исмаилия" } ], correctAnswerKey: "a" },
+            { id: 31, questionText: "В католическом вероучении промежуточное между адом и раем место называется", options: [ { key: "a", label: "а)", text: "чистилище" }, { key: "b", label: "б)", text: "целибат" }, { key: "c", label: "в)", text: "преисподняя" }, { key: "d", label: "г)", text: "клир" } ], correctAnswerKey: "a" },
+            { id: 32, questionText: "О существовании религиозных верований у первобытных людей свидетельствует", options: [ { key: "a", label: "а)", text: "строительство храмов" }, { key: "b", label: "б)", text: "практика захоронения соплеменников" }, { key: "c", label: "в)", text: "наличие религиозно-философских сочинений" }, { key: "d", label: "г)", text: "наличие священных текстов" } ], correctAnswerKey: "b" },
+            { id: 33, questionText: "По учению легендарного мудреца Лао-цзы вечное изменение мира, источник его многообразия, основной закон бытия –", options: [ { key: "a", label: "а)", text: "у вэй;" }, { key: "b", label: "б)", text: "цзиньтянь;" }, { key: "c", label: "в)", text: "дэ цзин;" }, { key: "d", label: "г)", text: "дао;" } ], correctAnswerKey: "d" },
+            { id: 34, questionText: "Согласно Э. Дюркгейму, предназначение религии состоит в том, чтобы", options: [ { key: "a", label: "а)", text: "предохранять от неврозов" }, { key: "b", label: "б)", text: "вводить людей в заблуждение" }, { key: "c", label: "в)", text: "устанавливать связь со сверхъестественным" }, { key: "d", label: "г)", text: "культивировать социальное чувство" } ], correctAnswerKey: "d" },
+            { id: 35, questionText: "К представителям социологии религии не относится", options: [ { key: "a", label: "а)", text: "Э. Дюркгейм" }, { key: "b", label: "б)", text: "О. Конт" }, { key: "c", label: "в)", text: "М. Вебер" }, { key: "d", label: "г)", text: "З. Фрейд" } ], correctAnswerKey: "d" },
+            { id: 36, questionText: "Христос переводится с греческого как", options: [ { key: "a", label: "а)", text: "«благочестивый»" }, { key: "b", label: "б)", text: "«помазанник», «мессия»" }, { key: "c", label: "в)", text: "«сын бога»" }, { key: "d", label: "г)", text: "«бог»" } ], correctAnswerKey: "b" },
+            { id: 37, questionText: "Термин «сансара» в индуизме означает", options: [ { key: "a", label: "а)", text: "покой;" }, { key: "b", label: "б)", text: "покорность;" }, { key: "c", label: "в)", text: "перевоплощение;" }, { key: "d", label: "г)", text: "аскетизм" } ], correctAnswerKey: "c" },
+            { id: 38, questionText: "К современным нетрадиционным культам относят «Церковь унификации» создателем которой стал", options: [ { key: "a", label: "а)", text: "американец Карлос Кастанеда" }, { key: "b", label: "б)", text: "американец Рон Хаббард" }, { key: "c", label: "в)", text: "индиец Абхай Чарин Де" }, { key: "d", label: "г)", text: "кореец Сен Мен Мун" } ], correctAnswerKey: "d" },
+            { id: 39, questionText: "Религиоведение делится на", options: [ { key: "a", label: "а)", text: "практическое и эмпирическое;" }, { key: "b", label: "б)", text: "теоретическое и практическое;" }, { key: "c", label: "в)", text: "теоретическое и историческое;" }, { key: "d", label: "г)", text: "идеальное и материальное;" } ], correctAnswerKey: "c" },
+            { id: 40, questionText: "Танах, а также религиозно-философские представления иудаизма послужили основой для становления", options: [ { key: "a", label: "а)", text: "сикхизма и буддизма;" }, { key: "b", label: "б)", text: "христианства и синтоизма;" }, { key: "c", label: "в)", text: "ислама и синтоизма;" }, { key: "d", label: "г)", text: "христианства и ислама;" } ], correctAnswerKey: "d" },
+            { id: 41, questionText: "Вера в относительно самостоятельное существование души характерна для:", options: [ { key: "a", label: "а)", text: "магии;" }, { key: "b", label: "б)", text: "анимизма;" }, { key: "c", label: "в)", text: "тотемизма;" }, { key: "d", label: "г)", text: "фетишизма;" } ], correctAnswerKey: "b" },
+            { id: 42, questionText: "Ветхий Завет – основа вероучения и догматики", options: [ { key: "a", label: "а)", text: "в буддизме" }, { key: "b", label: "б)", text: "в синтоизме" }, { key: "c", label: "в)", text: "в иудаизме и христианстве" }, { key: "d", label: "г)", text: "в католицизме" } ], correctAnswerKey: "c" },
+            { id: 43, questionText: "Талмуд – это", options: [ { key: "a", label: "а)", text: "свод правовых и религиозно-этических положений иудаизма;" }, { key: "b", label: "б)", text: "имя божества в индуизме и парсизме;" }, { key: "c", label: "в)", text: "имя верховного божества в синтоизме;" }, { key: "d", label: "г)", text: "название религиозной книги Китая;" } ], correctAnswerKey: "a" },
+            { id: 44, questionText: "Имам это", options: [ { key: "a", label: "а)", text: "глава мусульманской общины;" }, { key: "b", label: "б)", text: "светский глава теократического мусульманского государства;" }, { key: "c", label: "в)", text: "мусульманская община;" }, { key: "d", label: "г)", text: "добровольное пожертвование в пользу бедных;" } ], correctAnswerKey: "a" },
+            { id: 45, questionText: "Религиозная сайентология – это", options: [ { key: "a", label: "а)", text: "современный религиозный культ, использующий шаманскую практику;" }, { key: "b", label: "б)", text: "направление современной религиозной мистики;" }, { key: "c", label: "в)", text: "современное название религии вообще;" }, { key: "d", label: "г)", text: "одно из современных религиозных учений, соединяющее религию с наукой;" } ], correctAnswerKey: "d" },
+            { id: 46, questionText: "Вывод о тождестве социального и религиозного первым сделал", options: [ { key: "a", label: "а)", text: "М. Вебер;" }, { key: "b", label: "б)", text: "Э. Дюркгейм;" }, { key: "c", label: "в)", text: "Т. Мюнцер;" }, { key: "d", label: "г)", text: "М. Лютер;" } ], correctAnswerKey: "b" },
+            { id: 47, questionText: "Учение Конфуция", options: [ { key: "a", label: "а)", text: "опиралось на идеи буддизма;" }, { key: "b", label: "б)", text: "опиралось на культ Неба и культ предков;" }, { key: "c", label: "в)", text: "разрывало все связи с древними религиозными традициями;" }, { key: "d", label: "г)", text: "опиралось на идеи синтоизма;" } ], correctAnswerKey: "b" },
+            { id: 48, questionText: "Постижение бога и соединение с ним, согласно вероучению сикхизма", options: [ { key: "a", label: "а)", text: "предполагает активную жизнь и выполнение дхармы человека;" }, { key: "b", label: "б)", text: "возможно при следовании «пути освобождения» обозначенному как следование «трем драгоценностям»;" }, { key: "c", label: "в)", text: "требует отказа от мирской жизни и возможно только для монахов-аскетов;" }, { key: "d", label: "г)", text: "при соблюдении принципа ненасилия и не нанесения вреда себе подобным;" } ], correctAnswerKey: "a" },
+            { id: 49, questionText: "Особенностью религий Индии является", options: [ { key: "a", label: "а)", text: "единобожие" }, { key: "b", label: "б)", text: "интровертивность и акцент на индивидуальный духовный поиск" }, { key: "c", label: "в)", text: "культ Неба;" }, { key: "d", label: "г)", text: "замена религии социально-этическими учениями;" } ], correctAnswerKey: "b" },
+            { id: 50, questionText: "Ересь – это", options: [ { key: "a", label: "а)", text: "одна из разновидностей раннего протестантизма, признающего водное крещение над взрослыми;" }, { key: "b", label: "б)", text: "учение о божественном творении мира, живой и неживой природы;" }, { key: "c", label: "в)", text: "сектантское течение в исламе, утверждавшее скорое пришествие мессии-махди;" }, { key: "d", label: "г)", text: "учение, вступавшее в противоречие с господствующим вероучением;" } ], correctAnswerKey: "d" },
+            { id: 51, questionText: "Имя Бога, впервые встречающееся в Ветхом Завете", options: [ { key: "a", label: "а)", text: "Иисус" }, { key: "b", label: "б)", text: "Талмуд" }, { key: "c", label: "в)", text: "Яхве" }, { key: "d", label: "г)", text: "Сурья" } ], correctAnswerKey: "c" },
+            { id: 52, questionText: "Доктрина о предопределении, избранности, согласно которой Бог избрал одних к вечному блаженству, а других - к погибели принадлежит", options: [ { key: "a", label: "а)", text: "католичеству;" }, { key: "b", label: "б)", text: "православию;" }, { key: "c", label: "в)", text: "кальвинизму;" }, { key: "d", label: "г)", text: "лютеранству;" } ], correctAnswerKey: "c" },
+            { id: 53, questionText: "В исламе Иса (Иисус Христос) считается", options: [ { key: "a", label: "а)", text: "посланником" }, { key: "b", label: "б)", text: "Богочеловеком" }, { key: "c", label: "в)", text: "пророком" }, { key: "d", label: "г)", text: "Богом" } ], correctAnswerKey: "c" },
+            { id: 54, questionText: "Для ислама не характерна вера в", options: [ { key: "a", label: "а)", text: "триединство Бога;" }, { key: "b", label: "б)", text: "пророков;" }, { key: "c", label: "в)", text: "ад и рай;" }, { key: "d", label: "г)", text: "единого Бога;" } ], correctAnswerKey: "a" },
+            { id: 55, questionText: "Американский ученый У. Джемс, объясняя религию, утверждал, что «чувство есть глубочайший источник религии, а философские и богословские построения являются только вторичной настройкой, подобной переводу подлинника на чужой язык». Это подход к анализу религии –", options: [ { key: "a", label: "а)", text: "этнологический;" }, { key: "b", label: "б)", text: "психологический;" }, { key: "c", label: "в)", text: "антропологический;" }, { key: "d", label: "г)", text: "теологический;" } ], correctAnswerKey: "b" },
+            { id: 56, questionText: "Синагога – это", options: [ { key: "a", label: "а)", text: "древний китайский храм" }, { key: "b", label: "б)", text: "общее название Священного Писания иудаизма;" }, { key: "c", label: "в)", text: "иудейский молитвенный дом;" }, { key: "d", label: "г)", text: "святое место для древних иудеев у горы Синай;" } ], correctAnswerKey: "c" },
+            { id: 57, questionText: "К вероучению иудаизма не относится следующее положение", options: [ { key: "a", label: "а)", text: "Иисус Христос – сын Божий;" }, { key: "b", label: "б)", text: "еврейский народ является богоизбранным;" }, { key: "c", label: "в)", text: "человек создан Богом по своему образу и подобию;" }, { key: "d", label: "г)", text: "существует только единый Бог;" } ], correctAnswerKey: "a" },
+            { id: 58, questionText: "В индуизме система упражнений и медитаций, которые позволяют человеку овладеть своими физиологическими и психологическими возможностями, называется", options: [ { key: "a", label: "а)", text: "прана;" }, { key: "b", label: "б)", text: "карма;" }, { key: "c", label: "в)", text: "нирвана;" }, { key: "d", label: "г)", text: "йога;" } ], correctAnswerKey: "d" },
+            { id: 59, questionText: "Обнародованные в 1517 г. 95 тезисов против злоупотреблений католической церкви принадлежали перу", options: [ { key: "a", label: "а)", text: "Т. Мюнцера;" }, { key: "b", label: "б)", text: "М. Лютера;" }, { key: "c", label: "в)", text: "Дж. Смита;" }, { key: "d", label: "г)", text: "У. Цвингли;" } ], correctAnswerKey: "b" },
+            { id: 60, questionText: "Основной характеристикой религиозного сознания является", options: [ { key: "a", label: "а)", text: "образность;" }, { key: "b", label: "б)", text: "вера;" }, { key: "c", label: "в)", text: "совесть;" }, { key: "d", label: "г)", text: "рациональность;" } ], correctAnswerKey: "b" },
+            { id: 61, questionText: "Какая религия является национальной религии?", options: [ { key: "a", label: "а)", text: "синтоизм;" }, { key: "b", label: "б)", text: "ислам;" }, { key: "c", label: "в)", text: "буддизм;" }, { key: "d", label: "г)", text: "католицизм;" } ], correctAnswerKey: "a" },
+            { id: 62, questionText: "Какие религии являются национальными религиями Китая?", options: [ { key: "a", label: "а)", text: "джанизм, индуизм" }, { key: "b", label: "б)", text: "даосизм, конфуцианство" }, { key: "c", label: "в)", text: "шаманизм, буддизм" }, { key: "d", label: "г)", text: "христианство, православие" } ], correctAnswerKey: "b" },
+            { id: 63, questionText: "Священная книга буддизма это –", options: [ { key: "a", label: "а)", text: "библия" }, { key: "b", label: "б)", text: "вера" }, { key: "c", label: "с)", text: "трипитака" }, { key: "d", label: "г)", text: "уланишады" } ], correctAnswerKey: "c" },
+            { id: 64, questionText: "Когда возникает буддизм?", options: [ { key: "a", label: "а)", text: "в XI веке до н.э." }, { key: "b", label: "б)", text: "в VII в до н.э." }, { key: "c", label: "в)", text: "во II веке н.э." }, { key: "d", label: "г)", text: "в II веке до н.э." } ], correctAnswerKey: "b" },
+            { id: 65, questionText: "Что означает термин будда?", options: [ { key: "a", label: "а)", text: "священный;" }, { key: "b", label: "б)", text: "просветлённый;" }, { key: "c", label: "в)", text: "победитель;" }, { key: "d", label: "г)", text: "вечный;" } ], correctAnswerKey: "b" },
+            { id: 66, questionText: "Когда буддизм начал распространяться в Центральной Азии?", options: [ { key: "a", label: "а)", text: "в эпоху Саманидов;" }, { key: "b", label: "б)", text: "в эпоху Кушанской империи (II веке);" }, { key: "c", label: "в)", text: "в эпоху Караханидов (Х в);" }, { key: "d", label: "г)", text: "в эпоху Сасанидов (I-II в);" } ], correctAnswerKey: "b" },
+            { id: 67, questionText: "Основные направления Христианства это –", options: [ { key: "a", label: "а)", text: "баптизм, православие, иудаизм;" }, { key: "b", label: "б)", text: "лютеранство, католицизм, православие;" }, { key: "c", label: "в)", text: "католицизм, православие, протестантизм;" }, { key: "d", label: "г)", text: "католицизм, кальвинизм, баптизм;" } ], correctAnswerKey: "c" },
+            { id: 68, questionText: "Где впервые возник протестантизм?", options: [ { key: "a", label: "а)", text: "в Германии" }, { key: "b", label: "б)", text: "в Англии" }, { key: "c", label: "в)", text: "в Италии" }, { key: "d", label: "г)", text: "в Греции" } ], correctAnswerKey: "a" },
+            { id: 69, questionText: "Термин «ислам» означает,", options: [ { key: "a", label: "а)", text: "миролюбивый" }, { key: "b", label: "б)", text: "покорный, Аллаху" }, { key: "c", label: "в)", text: "следующий за Мухаммедом" }, { key: "d", label: "г)", text: "знающий бога" } ], correctAnswerKey: "b" },
+            { id: 70, questionText: "Коран состоит из", options: [ { key: "a", label: "а)", text: "113 сур" }, { key: "b", label: "б)", text: "115 сур" }, { key: "c", label: "в)", text: "114 сур" }, { key: "d", label: "г)", text: "116 сур" } ], correctAnswerKey: "c" },
+            { id: 71, questionText: "В каком  году Мухаммед переехал из Мекки в Медину?", options: [ { key: "a", label: "а)", text: "622 г" }, { key: "b", label: "б)", text: "623 г" }, { key: "c", label: "в)", text: "626 г" }, { key: "d", label: "г)", text: "615 г." } ], correctAnswerKey: "a" },
+            { id: 72, questionText: "Какая религия не относится к национальным религиям?", options: [ { key: "a", label: "а)", text: "индуизм" }, { key: "b", label: "б)", text: "бахаизм" }, { key: "c", label: "в)", text: "синтоизм" }, { key: "d", label: "г)", text: "иудаизм" } ], correctAnswerKey: "b" },
+            { id: 73, questionText: "Какая религия является национальной религией Индии?", options: [ { key: "a", label: "а)", text: "синтоизм" }, { key: "b", label: "б)", text: "бахаизм" }, { key: "c", label: "с)", text: "индуизм" }, { key: "d", label: "г)", text: "брахманизм" } ], correctAnswerKey: "c" },
+            { id: 74, questionText: "Как называется национальная религия Японии ?", options: [ { key: "a", label: "а)", text: "Даосизм" }, { key: "b", label: "б)", text: "конфуцианство" }, { key: "c", label: "в)", text: "иудаизм" }, { key: "d", label: "г)", text: "синтоизм" } ], correctAnswerKey: "d" },
+            { id: 75, questionText: "Что составляет основу философии индуизма ?", options: [ { key: "a", label: "а)", text: "книга Гита и Зита;" }, { key: "b", label: "б)", text: "Веды, Упанишады;" }, { key: "c", label: "в)", text: "Трипитака;" }, { key: "d", label: "г)", text: "Коран и хадисы" } ], correctAnswerKey: "b" },
+            { id: 76, questionText: "Когда возник Браxманизм ?", options: [ { key: "a", label: "а)", text: "в втором тысячелетии до нашей эры;" }, { key: "b", label: "б)", text: "в первом веке нашей эры;" }, { key: "c", label: "в)", text: "в середине первого тысячелетия нашей эры;" }, { key: "d", label: "г)", text: "в X веке нашей эры;" } ], correctAnswerKey: "a" },
+            { id: 77, questionText: "Укажите национальную религию Китая?", options: [ { key: "a", label: "а)", text: "джайнизм;" }, { key: "b", label: "б)", text: "даосизм;" }, { key: "c", label: "в)", text: "индуизм;" }, { key: "d", label: "г)", text: "шаманизм;" } ], correctAnswerKey: "b" },
+            { id: 78, questionText: "В какой книге изложены философские основы даосизма ?", options: [ { key: "a", label: "а)", text: "“Бу чжи дао ли”" }, { key: "b", label: "б)", text: "“Синто”" }, { key: "c", label: "в)", text: "“Дао дe Цзин”" }, { key: "d", label: "г)", text: "“Лунг-Юй”" } ], correctAnswerKey: "c" },
+            { id: 79, questionText: "Когда возникает Иудаизм ?", options: [ { key: "a", label: "а)", text: "в ХV веке" }, { key: "b", label: "б)", text: "в  первом веке до нашей эры;" }, { key: "c", label: "в)", text: "в первом тысячелетии до нашей эры;" }, { key: "d", label: "г)", text: "в начале X века;" } ], correctAnswerKey: "c" },
+            { id: 80, questionText: "Священные книги Иудаизма?", options: [ { key: "a", label: "а)", text: "библия, веды;" }, { key: "b", label: "б)", text: "Коран, хадисы;" }, { key: "c", label: "в)", text: "книга Дао ;" }, { key: "d", label: "г)", text: "библия , талмуд;" } ], correctAnswerKey: "d" },
+            { id: 81, questionText: "Какой народ в основном исповедует иудаизм?", options: [ { key: "a", label: "а)", text: "палестинцы;" }, { key: "b", label: "б)", text: "евреи;" }, { key: "c", label: "в)", text: "коренные народы Центральной Азии;" }, { key: "d", label: "г)", text: "народы Индии;" } ], correctAnswerKey: "b" },
+            // Question 82 is missing in the source document
+            { id: 83, questionText: "Назовите священную книгу Зороастризма", options: [ { key: "a", label: "а)", text: "трипитака" }, { key: "b", label: "б)", text: "Веды;" }, { key: "c", label: "в)", text: "Авеста;" }, { key: "d", label: "г)", text: "евангелие" } ], correctAnswerKey: "c" },
+            { id: 84, questionText: "Книга “Авесто” относится к", options: [ { key: "a", label: "а)", text: "маздакизму;" }, { key: "b", label: "б)", text: "xристианству;" }, { key: "c", label: "в)", text: "буддизму;" }, { key: "d", label: "г)", text: "зороастризму;" } ], correctAnswerKey: "d" },
+            { id: 85, questionText: "Какие религии относятся к мировым?", options: [ { key: "a", label: "а)", text: "еврейская, индуизм, буддизм;" }, { key: "b", label: "б)", text: "Ислам, бахаизм; синтоизм;" }, { key: "c", label: "в)", text: "буддизм, xристианство, ислам;" }, { key: "d", label: "г)", text: "христианство, индуизм, буддизм;" } ], correctAnswerKey: "c" },
+            { id: 86, questionText: "Какая мировая религия возникает первой?", options: [ { key: "a", label: "а)", text: "буддизм;" }, { key: "b", label: "б)", text: "ислам;" }, { key: "c", label: "в)", text: "xристианство;" }, { key: "d", label: "г)", text: "все эти религии возникают одновременно;" } ], correctAnswerKey: "a" },
+            { id: 87, questionText: "Когда возникает Христианство?", options: [ { key: "a", label: "а)", text: "в десятом веке нашей эры;" }, { key: "b", label: "б)", text: "в  VII веке до нашей эры;" }, { key: "c", label: "в)", text: "в I веке нашей эры;" }, { key: "d", label: "г)", text: "в середине первого тысячелетия нашей эры;" } ], correctAnswerKey: "c" },
+            { id: 88, questionText: "Когда Xристианство разделилось на католиков и протестантов?", options: [ { key: "a", label: "а)", text: "в пятом веке нашей эры;" }, { key: "b", label: "б)", text: "во втором веке до нашей эры;" }, { key: "c", label: "в)", text: "в XI веке;" }, { key: "d", label: "г)", text: "в XV1 веке;" } ], correctAnswerKey: "c" }, // This refers to East-West Schism (Orthodox/Catholic). Protestantism is 16th C. The file marks XI.
+            { id: 89, questionText: "Где возникает Христианство?", options: [ { key: "a", label: "а)", text: "в восточной части Римской импeрии;" }, { key: "b", label: "б)", text: "в  России;" }, { key: "c", label: "в)", text: "в Eвропе ;" }, { key: "d", label: "г)", text: "в Византии;" } ], correctAnswerKey: "a" },
+            { id: 90, questionText: "Ислам является религией ?", options: [ { key: "a", label: "а)", text: "фетишистской;" }, { key: "b", label: "б)", text: "политеистической;" }, { key: "c", label: "в)", text: "монотеистической;" }, { key: "d", label: "г)", text: "тотемистической;" } ], correctAnswerKey: "c" },
+            { id: 91, questionText: "В каком году вступил в действие  в Узбекистане «Закон о свободе совести и религиозных организациях» - в Новой редакции?", options: [ { key: "a", label: "А)", text: "в 2020г. ;" }, { key: "b", label: "Б)", text: "в 2021г. ;" }, { key: "c", label: "В)", text: "в2023г.;" }, { key: "d", label: "г)", text: "2024г;" } ], correctAnswerKey: "b" },
+            { id: 92, questionText: "Назовите основные течения в Исламе:", options: [ { key: "a", label: "а)", text: "суннизм, шиизм, муттазилизм;" }, { key: "b", label: "б)", text: "шиизм, шафиизм, суннизм;" }, { key: "c", label: "в)", text: "суннизм, шиизм, xариджизм;" }, { key: "d", label: "г)", text: "исмаилизм, ҳанафизм, суннизм;" } ], correctAnswerKey: "c" },
+            { id: 93, questionText: "Назовите основные мазхабы в суннизме :", options: [ { key: "a", label: "а)", text: "ҳанафия, маликия, шафия, xанбалия;" }, { key: "b", label: "б)", text: "ҳанафия, ваҳҳабизм, шафиизм, xариджизм;" }, { key: "c", label: "в)", text: "шафиизм, маликизм, имамизм, xанбализм;" }, { key: "d", label: "г)", text: "ҳанафия, шафия, ҳалложия, маликия;" } ], correctAnswerKey: "a" },
+            { id: 94, questionText: "Сборник хадисов Имама аль Буxари  « Аль жами ас сахих» состоит из", options: [ { key: "a", label: "а)", text: "7275 хадисов;" }, { key: "b", label: "б)", text: "6250 хадисов;" }, { key: "c", label: "в)", text: "7150 хадисов;" }, { key: "d", label: "г)", text: "7200 хадисов;" } ], correctAnswerKey: "a" },
+            { id: 95, questionText: "Назовите великих представителей суфизма:", options: [ { key: "a", label: "а)", text: "Газзали, Фараби, Нақшбанд;" }, { key: "b", label: "б)", text: "Газзали, Яссави, Нақшбанд;" }, { key: "c", label: "в)", text: "Бақиргани, Физули, У. Хаям;" }, { key: "d", label: "г)", text: "Имам ат-Термизи, Джами, Яссави;" } ], correctAnswerKey: "b" }
+        ];
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const endScreen = document.getElementById('end-screen');
+        const quizDescription = document.getElementById('quiz-description');
+
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const questionNumberHeader = document.getElementById('question-number-header');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackTextEl = document.getElementById('feedback-text');
+        
+        const questionCounterEl = document.getElementById('question-counter');
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('final-score');
+        const progressBar = document.getElementById('progress-bar');
+
+        // --- Quiz State ---
+        let currentQuestionIndex = 0;
+        let userScore = 0;
+        let selectedOptionButton = null;
+        let answerChecked = false;
+        let currentQuizQuestions = []; // Holds the 20 randomly selected questions for the current quiz session
+        const QUESTIONS_PER_QUIZ = 20;
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', handleNextQuestion);
+        restartBtn.addEventListener('click', restartQuiz);
+
+        // --- Functions ---
+
+        // Function to shuffle an array (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+        }
+
+        // Initializes and starts the quiz.
+        function startQuiz() {
+            // Shuffle the master list of questions and take the first QUESTIONS_PER_QUIZ
+            let shuffledQuestions = [...allQuestionsData]; // Create a copy to avoid modifying the original
+            shuffleArray(shuffledQuestions);
+            currentQuizQuestions = shuffledQuestions.slice(0, QUESTIONS_PER_QUIZ);
+            
+            // Update quiz description if necessary (though it's static for 20 questions now)
+            quizDescription.textContent = `Проверьте свои знания. В тесте ${QUESTIONS_PER_QUIZ} случайно выбранных вопросов.`;
+
+            startScreen.classList.add('hidden');
+            questionScreen.classList.remove('hidden');
+            endScreen.classList.add('hidden');
+            
+            currentQuestionIndex = 0;
+            userScore = 0;
+            updateScoreDisplay();
+            loadQuestion();
+        }
+
+        // Loads and displays the current question and its options.
+        function loadQuestion() {
+            answerChecked = false;
+            selectedOptionButton = null;
+            // Use currentQuizQuestions instead of allQuestionsData
+            const currentQuestion = currentQuizQuestions[currentQuestionIndex];
+
+            questionNumberHeader.textContent = `Вопрос (исх. №${currentQuestion.id})`; // Show original ID for reference
+            questionTextEl.textContent = currentQuestion.questionText;
+            // Update question counter based on QUESTIONS_PER_QUIZ
+            questionCounterEl.textContent = `Вопрос ${currentQuestionIndex + 1} из ${QUESTIONS_PER_QUIZ}`;
+            
+            optionsContainer.innerHTML = ''; // Clear previous options
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('option-button', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'border', 'border-gray-300', 'bg-gray-100', 'hover:bg-gray-200', 'focus:outline-none', 'focus:ring-2', 'focus:ring-indigo-400');
+                button.innerHTML = `<span class="font-semibold mr-2">${option.label}</span> ${option.text}`;
+                button.dataset.key = option.key;
+                button.addEventListener('click', () => selectAnswer(button, option.key));
+                optionsContainer.appendChild(button);
+            });
+
+            feedbackTextEl.textContent = '';
+            feedbackTextEl.className = 'min-h-[30px] text-md font-medium mb-6'; // Reset classes
+            disableNextButton();
+            updateProgressBar();
+        }
+
+        // Handles the user selecting an answer.
+        function selectAnswer(button, selectedKey) {
+            if (answerChecked) return; 
+
+            if (selectedOptionButton) {
+                selectedOptionButton.classList.remove('selected', 'bg-blue-500', 'text-white');
+                selectedOptionButton.classList.add('bg-gray-100');
+            }
+
+            button.classList.add('selected', 'bg-blue-500', 'text-white');
+            button.classList.remove('bg-gray-100');
+            selectedOptionButton = button;
+            
+            checkAnswer(selectedKey);
+        }
+
+        // Checks if the selected answer is correct and provides feedback.
+        function checkAnswer(selectedKey) {
+            if (answerChecked) return;
+            answerChecked = true;
+
+            // Use currentQuizQuestions
+            const currentQuestion = currentQuizQuestions[currentQuestionIndex];
+            const correctKey = currentQuestion.correctAnswerKey;
+            const allOptionButtons = optionsContainer.querySelectorAll('.option-button');
+
+            allOptionButtons.forEach(btn => {
+                btn.disabled = true; 
+                btn.classList.remove('hover:bg-gray-200', 'selected', 'bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-100'); 
+
+                if (btn.dataset.key === correctKey) {
+                    btn.classList.add('correct'); 
+                }
+            });
+            
+            if (selectedKey === correctKey) {
+                userScore++;
+                feedbackTextEl.textContent = 'Правильно!';
+                feedbackTextEl.classList.add('text-green-600');
+                if (selectedOptionButton) { 
+                    selectedOptionButton.classList.remove('incorrect', 'correct'); 
+                    selectedOptionButton.classList.add('correct'); 
+                }
+            } else {
+                feedbackTextEl.textContent = `Неправильно. Правильный ответ: ${currentQuestion.options.find(opt => opt.key === correctKey).label} ${currentQuestion.options.find(opt => opt.key === correctKey).text}`;
+                feedbackTextEl.classList.add('text-red-600');
+                if (selectedOptionButton) { 
+                    selectedOptionButton.classList.remove('incorrect', 'correct'); 
+                    selectedOptionButton.classList.add('incorrect'); 
+                }
+            }
+            updateScoreDisplay();
+            enableNextButton();
+
+            // Update "Next" button text if it's the last question of the 20
+            if (currentQuestionIndex === QUESTIONS_PER_QUIZ - 1) {
+                nextBtn.textContent = 'Завершить тест';
+            }
+        }
+        
+        // Updates the displayed score.
+        function updateScoreDisplay() {
+            scoreEl.textContent = `Счет: ${userScore}`;
+        }
+
+        // Enables the 'Next Question' button.
+        function enableNextButton() {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            nextBtn.classList.add('opacity-100');
+        }
+
+        // Disables the 'Next Question' button.
+        function disableNextButton() {
+            nextBtn.disabled = true;
+            nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            nextBtn.classList.remove('opacity-100');
+        }
+        
+        // Handles moving to the next question or ending the quiz.
+        function handleNextQuestion() {
+            currentQuestionIndex++;
+            // Check against QUESTIONS_PER_QUIZ
+            if (currentQuestionIndex < QUESTIONS_PER_QUIZ) {
+                loadQuestion();
+                // Reset button text if not the last question of the 20
+                if (nextBtn.textContent === 'Завершить тест' && currentQuestionIndex < QUESTIONS_PER_QUIZ - 1) {
+                     nextBtn.textContent = 'Следующий вопрос';
+                }
+            } else {
+                endQuiz();
+            }
+        }
+
+        // Ends the quiz and displays the final score.
+        function endQuiz() {
+            questionScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            // Update final score message based on QUESTIONS_PER_QUIZ
+            finalScoreEl.textContent = `Вы ответили правильно на ${userScore} из ${QUESTIONS_PER_QUIZ} вопросов.`;
+        }
+
+        // Restarts the quiz from the beginning.
+        function restartQuiz() {
+            endScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            nextBtn.textContent = 'Следующий вопрос'; // Reset button text
+            // No need to reset quizDescription here as startQuiz will handle it
+        }
+        
+        // Updates the progress bar.
+        function updateProgressBar() {
+            // Calculate progress based on QUESTIONS_PER_QUIZ
+            const progressPercentage = ((currentQuestionIndex + 1) / QUESTIONS_PER_QUIZ) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+
+        // Ensure the script runs after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Quiz doesn't start automatically, user clicks "Start"
+        });
+
+    </script>
+</body>
+</html>
